@@ -1,57 +1,43 @@
-# Synthesizable Fixed-Point Mathematics Core (Q16.16)
+# Fixed-Point Math Core
 
-A high-performance, resource-optimized fixed-point mathematics hardware IP core written in synthesizable Verilog. This core is specifically tailored for hardware acceleration, digital signal processing (DSP), and algorithmic computations in resource-constrained FPGAs and ASICs.
+A parametrized, fully-clocked signed fixed-point arithmetic core designed in Verilog-2001, complete with a self-checking SystemVerilog verification testbench. This design is optimized for AMD Xilinx Artix-7 FPGA fabric, prioritizing low resource usage and clean timing closure.
 
-## Microarchitecture Features
-- **Format:** Q16.16 fixed-point format (16-bit signed integer, 16-bit fractional component).
-- **Fully Synthesizable:** Written in standard Verilog-2001, avoiding vendor-specific hard macros to ensure cross-platform compatibility.
-- **Pipelined Architecture:** Optimized critical paths to achieve high maximum frequency ($F_{max}$) and maintain tight timing closures.
-- **Deterministic Latency:** Single-clock cycle latency for basic arithmetic blocks, ensuring predictable execution bounds for real-time control loops.
+## Features
 
-## Target Hardware
-Optimized primarily for **AMD Xilinx 7-Series FPGAs** (Artix-7, Kintex-7, Virtex-7) utilizing standard 6-input LUT microarchitectures.
+- **Parametrizable Widths**: Fully dynamic parameters for total bit width (`TOTAL_WIDTH`) and fractional precision bits (`FRACTIONAL_WIDTH`). Default configuration runs at standard signed Q16.16 format.
+- **Supported Operations**: 
+  - `2'b00` : ADD (Addition)
+  - `2'b01` : SUB (Subtraction)
+  - `2'b10` : MUL (Multiplication via iterative shift-and-add)
+  - `2'b11` : DIV (Division via iterative restoring shift-and-subtract)
+- **Hardware Optimization**: 
+  - Uses a **synchronous active-low reset** (`rst_n`) to stay local to Logic Elements and optimize placement routing without straining the global reset network.
+  - Multiplier and Divider execute at **1 bit per cycle**, eliminating large combinational depth or the need to infer rigid dedicated DSP48E1 blocks.
+- **Handshake Protocol**: Controlled via structural `start`, `ready`, and `valid` control lines. 
 
-### Estimated Resource Utilization (Artix-7 XC7A35T)
-| Module | LUTs | Flip-Flops (FF) | DSP Slices | Latency (Cycles) |
-| :--- | :--- | :--- | :--- | :--- |
-| **FXP_Add** | ~32 | 0 | 0 | Combinatorial / 1 |
-| **FXP_Sub** | ~32 | 0 | 0 | Combinatorial / 1 |
-| **FXP_Mul** | ~48 | ~64 | 1 (DSP48E1) | 2 (Pipelined) |
+## Architectural Latency
 
-## Directory Structure
-```text
-fixed-point-math-core/
-├── rtl/
-│   ├── fxp_add.v         # Fixed-point adder block
-│   ├── fxp_sub.v         # Fixed-point subtractor block
-│   └── fxp_mul.v         # Pipelined fixed-point multiplier
-├── tb/
-│   └── tb_fxp_math.v     # Comprehensive self-checking testbench
-├── docs/                 # Additional design notes and timing diagrams
-├── .gitignore            # Hardware tool-chain untracked files block
-└── LICENSE               # MIT License
+- **ADD / SUB**: 2 cycles
+- **MUL**: `TOTAL_WIDTH` + 2 cycles
+- **DIV**: `TOTAL_WIDTH` + `FRACTIONAL_WIDTH` + 2 cycles
 
-##Verification & Simulation
-The design includes a self-checking testbench to validate arithmetic precision, overflow edge cases, and signed fraction boundaries.
+## Project Structure
 
-To Run Simulation (Vivado Simulator):
-Open Vivado Tcl Console or your preferred EDA environment.
+- `fp_math_core.v` : Core synthesizable RTL implementation.
+- `tb_fp_math_core.sv` : Comprehensive verification environment driving edge-case diagnostics and randomized testing sequences (`std::randomize()`) scored against a real-number floating-point reference model.
 
-##Source the design files and testbench:
+## Simulation & Verification
 
-Tcl
-read_verilog ./rtl/fxp_add.v ./rtl/fxp_sub.v ./rtl/fxp_mul.v
-read_verilog ./tb/tb_fxp_math.v
-Launch the simulation behavior:
+The self-checking testbench applies a quantization-aware margin of tolerance ($2 \times \text{fractional LSBs}$) to validate execution results. It tests:
+1. Directed boundary/edge cases (Zeros, Overflow limits, Min/Max thresholds).
+2. Division-by-zero hardware exception flags.
+3. 60+ fully randomized transactions.
 
-Tcl
-launch_simulation
-run all
+### How to Run Simulation
 
-#Licensing & Commercial Support
-This repository contains the open-core evaluation version under the MIT License.
+Compile and simulate using any standard SystemVerilog simulator (e.g., Vivado XSIM, ModelSim, Verilator):
 
-For production-ready, fully verified advanced math modules (including Fixed-Point Division, Square Root, CORDIC engines, and full AXI4-Stream interface wrappers), please acquire a commercial license:
-👉 Get VORTEXX IP Commercial Support & Advanced Modules via Gumroad
-
-For custom RTL modifications, silicon IP licensing integration, or FPGA acceleration consultancy, reach out directly via VORTEXX IP.
+```bash
+# Example compilation command using standard tools (adjust to your specific vendor CLI)
+vlog fp_math_core.v tb_fp_math_core.sv
+vsim tb_fp_math_core -c -do "run -all; quit"
