@@ -31,13 +31,13 @@ fixed-point-math-core/
 ├── .gitignore            # Hardware tool-chain untracked files block
 └── LICENSE               # MIT License
 
-Verification & Simulation
+##Verification & Simulation
 The design includes a self-checking testbench to validate arithmetic precision, overflow edge cases, and signed fraction boundaries.
 
 To Run Simulation (Vivado Simulator):
 Open Vivado Tcl Console or your preferred EDA environment.
 
-Source the design files and testbench:
+##Source the design files and testbench:
 
 Tcl
 read_verilog ./rtl/fxp_add.v ./rtl/fxp_sub.v ./rtl/fxp_mul.v
@@ -47,7 +47,8 @@ Launch the simulation behavior:
 Tcl
 launch_simulation
 run all
-Licensing & Commercial Support
+
+#Licensing & Commercial Support
 This repository contains the open-core evaluation version under the MIT License.
 
 For production-ready, fully verified advanced math modules (including Fixed-Point Division, Square Root, CORDIC engines, and full AXI4-Stream interface wrappers), please acquire a commercial license:
