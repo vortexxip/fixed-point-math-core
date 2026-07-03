@@ -1,43 +1,55 @@
-# Fixed-Point Math Core
+# Parametric Fixed-Point Arithmetic Core (ADD/SUB/MUL/DIV) for Xilinx Artix-7
 
-A parametrized, fully-clocked signed fixed-point arithmetic core designed in Verilog-2001, complete with a self-checking SystemVerilog verification testbench. This design is optimized for AMD Xilinx Artix-7 FPGA fabric, prioritizing low resource usage and clean timing closure.
+A high-reliability, fully-clocked, signed fixed-point math IP core engineered in Verilog-2001 and verified with a robust SystemVerilog testbench. Designed specifically to hit high clock frequencies ($F_{\text{max}}$) and achieve clean timing closure on resource-constrained AMD Xilinx Artix-7 and 7-series FPGA fabric.
 
-## Features
+👉 **Looking for the Complete Production-Ready IP & Verification Package?**  
+[Get Instant Access to the Full Design & Test Suite on Gumroad](https://vortexxip.gumroad.com/l/fixed-point-math-core)
 
-- **Parametrizable Widths**: Fully dynamic parameters for total bit width (`TOTAL_WIDTH`) and fractional precision bits (`FRACTIONAL_WIDTH`). Default configuration runs at standard signed Q16.16 format.
-- **Supported Operations**: 
-  - `2'b00` : ADD (Addition)
-  - `2'b01` : SUB (Subtraction)
-  - `2'b10` : MUL (Multiplication via iterative shift-and-add)
-  - `2'b11` : DIV (Division via iterative restoring shift-and-subtract)
-- **Hardware Optimization**: 
-  - Uses a **synchronous active-low reset** (`rst_n`) to stay local to Logic Elements and optimize placement routing without straining the global reset network.
-  - Multiplier and Divider execute at **1 bit per cycle**, eliminating large combinational depth or the need to infer rigid dedicated DSP48E1 blocks.
-- **Handshake Protocol**: Controlled via structural `start`, `ready`, and `valid` control lines. 
+---
 
-## Architectural Latency
+## Why This Core? (The Engineering Edge)
 
-- **ADD / SUB**: 2 cycles
+Most standard Verilog math operations rely on behavioral operators (`*`, `/`) that synthesize into massive combinational paths or force the compiler to hog rigid, expensive DSP48E1 slices. 
+
+This IP core solves that by utilizing an **architectural pipeline** optimized for physical implementation:
+1. **Zero DSP Block Bloat**: Uses iterative shift-and-add (multiplication) and restoring shift-and-subtract (division) algorithms running at 1-bit/cycle. This keeps the combinational logic short, allowing synthesis to infer lightweight LUT/FF fabric.
+2. **Timing-Closure Friendly**: Features a fully synchronous active-low reset layout (`rst_n`), isolating flip-flop resets locally and preventing heavy fan-in routing across global networks.
+3. **Flexible Q-Format Precision**: Instantly scale your dynamic range via compile-time parameters (`TOTAL_WIDTH` and `FRACTIONAL_WIDTH`). Default configuration runs at an out-of-the-box signed **Q16.16** setup.
+
+---
+
+## Architectural Profile & Interface
+
+### Latency Budget
+- **ADD / SUB**: 2 clock cycles
 - **MUL**: `TOTAL_WIDTH` + 2 cycles
 - **DIV**: `TOTAL_WIDTH` + `FRACTIONAL_WIDTH` + 2 cycles
 
-## Project Structure
+### Handshake Protocol
+The core implements an industrial 3-wire handshake mechanism (`start`, `ready`, `valid`) to maximize data throughput and enable immediate, back-to-back operations.
 
-- `fp_math_core.v` : Core synthesizable RTL implementation.
-- `tb_fp_math_core.sv` : Comprehensive verification environment driving edge-case diagnostics and randomized testing sequences (`std::randomize()`) scored against a real-number floating-point reference model.
+---
 
-## Simulation & Verification
+## What’s Included in the Repository
 
-The self-checking testbench applies a quantization-aware margin of tolerance ($2 \times \text{fractional LSBs}$) to validate execution results. It tests:
-1. Directed boundary/edge cases (Zeros, Overflow limits, Min/Max thresholds).
-2. Division-by-zero hardware exception flags.
-3. 60+ fully randomized transactions.
+- `fp_math_core.v` : Synthesizable RTL design implementing the full control FSM and iterative logic.
+- `tb_fp_math_core.sv` : Self-checking behavioral verification testbench running randomized stress tests.
 
-### How to Run Simulation
+---
 
-Compile and simulate using any standard SystemVerilog simulator (e.g., Vivado XSIM, ModelSim, Verilator):
+## Verification & Stress Testing
+
+The design features a complete SystemVerilog verification suite (`tb_fp_math_core.sv`) which checks correctness against a floating-point real-number golden reference model.
+
+The environment validates:
+- Real-number precision tracking within a quantization-aware error margin.
+- Crucial edge-case limits (Max Positive overflow, Min Negative underflow, Zero boundaries).
+- Real-time hardware exception flags including **Division-by-Zero** safety traps.
+- 60+ fully randomized stimulus transactions (`std::randomize()`) biased towards physical extreme thresholds.
+
+### Running the Testbench
+To compile and execute the simulation natively in your environment (e.g., Vivado XSIM, ModelSim):
 
 ```bash
-# Example compilation command using standard tools (adjust to your specific vendor CLI)
 vlog fp_math_core.v tb_fp_math_core.sv
 vsim tb_fp_math_core -c -do "run -all; quit"
