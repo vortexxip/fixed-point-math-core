@@ -1,0 +1,32 @@
+# Vivado and Xilinx generated files and directories
+.Xil/
+*.jou
+*.log
+*.pb
+*.str
+*.dir
+*.os
+*.vdi
+*.wix
+*.wdb
+*.wcfg
+
+# Simulation directories (ModelSim, Questa, Vivado Simulator)
+xsim.dir/
+xsim/
+msim/
+work/
+*.vstf
+*.mpf
+
+# Compilation & Output artifacts
+*.bit
+*.bin
+*.mcs
+*.prm
+*.bxml
+*.gen/
+
+# OS specific files
+.DS_Store
+Thumbs.db
